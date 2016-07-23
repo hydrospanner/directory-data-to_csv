@@ -1,4 +1,4 @@
-# Directory data to csv
+# Directory Data to CSV
 Are you ever unsure what files are on in a folder on your computer or network drive? Small folders are easy to click and see, but large folders with many subfolders can be too much to look through.
 
 Using Python, I made a script to walk through a file directory and output the data in an easy to read tabular format.
