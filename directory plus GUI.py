@@ -19,12 +19,17 @@ class DirInfo:
             self.add_files(dir_df, dir_list, max_depth, my_path)
         dir_df.to_csv(swap_chr(swap_chr(my_path, '\\', '.'), ':', ".") + '.csv')
 
+    def get_size(self, path):
+        try:
+            return os.path.getsize(path)
+        except:
+            return 0
+
     def create_directory_list(self, my_path):
         d_list = []
         for (dirpath, dirnames, filenames) in os.walk(my_path):
-            d_list.append((dirpath, dirnames, filenames))
-            # comment out break to allow this to loop through all folders in the path
-            # break
+            file_name_size = [(file_name, self.get_size(dirpath + '\\' + file_name)) for file_name in filenames]
+            d_list.append((dirpath, dirnames, file_name_size))
         return d_list
 
     def folder_depth(self, parent_path, lookup_path):
@@ -72,24 +77,26 @@ class DirInfo:
     def file_stats(self, path, dir_list):
         # Returns a tuple of the count of files in the folder and file extension string.
         file_ct = 0
+        folder_size = 0
         extension_dict = {}
         for line in dir_list:
             if self.is_subfolder(line[0], path):
+                folder_size += sum(file_name_size[1] for file_name_size in line[2])
                 # Add the file count in this folder to the total file count.
                 file_ct += len(line[2])
                 # Loop through each file extension creating am extension dictionary where the value
                 # is the count of files with that extension.
                 for file_name in line[2]:
-                    ext = self.get_extension(file_name)
+                    ext = self.get_extension(file_name[0])
                     if ext in extension_dict:
                         extension_dict[ext] += 1
                     else:
                         extension_dict.update({ext: 1})
-        return (file_ct, self.dict_to_sort_str(extension_dict))
+        return (file_ct, self.dict_to_sort_str(extension_dict), folder_size)
 
     def build_df(self, dir_list, max_depth, my_path):
         # Build dataframe from folders.
-        df_index = ['Full path', 'Folder/file name', 'Subfolders', 'Files',
+        df_index = ['Full path', 'Folder/file name', 'Size, bytes', 'Subfolders', 'Files',
                     'Subfolders (including subfolders)', 'Files (including subfolders)', 'File types']
         df = pd.DataFrame(columns=df_index)
         for line in dir_list:
@@ -99,6 +106,7 @@ class DirInfo:
                 # the '.loc[len(dir_df)] =' functions as an .append() method for a dataframe.
                 df.loc[len(df)] = [path,
                                    self.folder_name(path),
+                                   f_stats[2],
                                    len(line[1]),
                                    len(line[2]),
                                    self.count_subfolders(path, dir_list),
@@ -112,7 +120,7 @@ class DirInfo:
             path = line[0]
             if self.folder_depth(my_path, path) <= max_depth:
                 for file_name in line[2]:
-                    dir_df.loc[len(dir_df)] = [path, file_name, '', '', '', '', '']
+                    dir_df.loc[len(dir_df)] = [path, file_name[0], file_name[1], '', '', '', '', '']
 
 
 class DirGUI(Frame):
