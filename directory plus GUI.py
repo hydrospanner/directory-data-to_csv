@@ -17,7 +17,7 @@ class DirInfo:
         dir_df = self.build_df(dir_list, max_depth, my_path)
         if include_files:
             self.add_files(dir_df, dir_list, max_depth, my_path)
-        dir_df.to_csv(swap_chr(swap_chr(my_path, '\\', '.'), ':', ".") + '.csv')
+        dir_df.to_csv(my_path.replace('\\', '.').replace(':', '.') + '.csv')
 
     def get_size(self, path):
         try:
@@ -103,7 +103,6 @@ class DirInfo:
             path = line[0]
             f_stats = self.file_stats(path, dir_list)
             if self.folder_depth(my_path, path) <= max_depth:
-                # the '.loc[len(dir_df)] =' functions as an .append() method for a dataframe.
                 df.loc[len(df)] = [path,
                                    self.folder_name(path),
                                    f_stats[2],
@@ -178,21 +177,10 @@ class DirGUI(Frame):
     def run_search(self):
         self.status_label['text'] = 'Running...'
         self.update()
-        path = swap_chr(self.search_folder, '/', '\\')
+        path = self.search_folder.replace('/', '\\')
         include_files = bool(self.include_files_chk_var.get())
-        # Is there something I can do here to force the GUI to update?
         DirInfo(my_path=path, max_depth=self.depth_spin.get(), include_files=include_files)
         self.status_label['text'] = 'script finished'
-
-
-def swap_chr(old_str, chr_old, chr_new):
-    new_str = ""
-    for character in old_str:
-        if character == chr_old:
-            new_str += chr_new
-        else:
-            new_str += character
-    return new_str
 
 
 def main():
